@@ -86,6 +86,29 @@
     clusterGroupLabels: if self.showMultiCluster then [self.clusterLabel] else [],
     clusterGroupLabelsStr: std.join(',', self.clusterGroupLabels),
 
+    podLabels: ['team'],
+    podLabelsStr: std.join(',', self.podLabels),
+
+    local labelJoin = function(metric, labels)
+      local podLabelJoinPrefix = [
+        'label_join('
+        for x in std.range(1, std.length(labels) - 1)
+      ] + ['label_join(%s, ' % metric];
+      local podLabelJoinSuffix = [
+        '"%s", ",", "label_%s")' % [lbl, lbl]
+        for lbl in labels
+      ];
+      std.join('', podLabelJoinPrefix) + std.join(',', podLabelJoinSuffix),
+
+    podLabelJoin: labelJoin('kube_pod_labels', self.podLabels),
+    deploymentLabelJoin: labelJoin('kube_deployment_labels', self.podLabels),
+
+    podJoinLabels: self.clusterGroupLabels +  ['namespace', 'pod'],
+    podJoinLabelsStr: std.join(',', self.podJoinLabels),
+
+    deploymentJoinLabels: self.clusterGroupLabels +  ['namespace', 'deployment'],
+    deploymentJoinLabelsStr: std.join(',', self.deploymentJoinLabels),
+
     namespaceLabel: 'namespace',
 
     // Default datasource name

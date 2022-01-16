@@ -13,7 +13,9 @@
         rules: [
           {
             expr: |||
+              (
               max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", %(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[5m]) >= 1
+              ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -31,6 +33,7 @@
             // label exists for 2 values. This avoids "many-to-many matching
             // not allowed" errors when joining with kube_pod_status_phase.
             expr: |||
+              (
               sum by (namespace, pod, %(clusterGroupLabelsStr)s) (
                 max by(namespace, pod, %(clusterGroupLabelsStr)s) (
                   kube_pod_status_phase{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s, phase=~"Pending|Unknown|Failed"}
@@ -38,6 +41,7 @@
                   1, max by(namespace, pod, owner_kind, %(clusterGroupLabelsStr)s) (kube_pod_owner{owner_kind!="Job"})
                 )
               ) > 0
+              ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -51,9 +55,11 @@
           },
           {
             expr: |||
+              (
               kube_deployment_status_observed_generation{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
                 !=
               kube_deployment_metadata_generation{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+              ) * on(%(deploymentJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(deploymentLabelJoin)s
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -68,6 +74,7 @@
           {
             expr: |||
               (
+              (
                 kube_deployment_spec_replicas{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
                   >
                 kube_deployment_status_replicas_available{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
@@ -76,6 +83,7 @@
                   ==
                 0
               )
+              ) * on(%(deploymentJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(deploymentLabelJoin)s
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -208,7 +216,9 @@
           },
           {
             expr: |||
+              (
               sum by (namespace, pod, container, %(clusterGroupLabelsStr)s) (kube_pod_container_status_waiting_reason{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}) > 0
+              ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
             ||| % $._config,
             labels: {
               severity: 'warning',

@@ -224,10 +224,12 @@
           {
             alert: 'CPUThrottlingHigh',
             expr: |||
+              (
               sum(increase(container_cpu_cfs_throttled_periods_total{container!="", %(cpuThrottlingSelector)s}[5m])) by (container, pod, namespace, %(clusterGroupLabelsStr)s)
                 /
               sum(increase(container_cpu_cfs_periods_total{%(cpuThrottlingSelector)s}[5m])) by (container, pod, namespace, %(clusterGroupLabelsStr)s)
                 > ( %(cpuThrottlingPercent)s / 100 )
+              ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
             ||| % $._config,
             'for': '15m',
             labels: {
