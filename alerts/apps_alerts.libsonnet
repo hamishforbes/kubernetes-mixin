@@ -13,9 +13,11 @@
         rules: [
           {
             expr: |||
-              (
+              sum(
               max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", %(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[5m]) >= 1
-              ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
+              ) without (endpoint, instance, job, service, uid, prometheus)
+              * on(namespace, pod, %(clusterGroupLabelsStr)s) group_left(workload, workload_type) namespace_workload_pod:kube_pod_owner:relabel
+              * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -34,11 +36,11 @@
             // not allowed" errors when joining with kube_pod_status_phase.
             expr: |||
               (
-              sum by (namespace, pod, %(clusterGroupLabelsStr)s) (
-                max by(namespace, pod, %(clusterGroupLabelsStr)s) (
+              sum by (namespace, pod, workload, workload_type, %(clusterGroupLabelsStr)s) (
+                max by(namespace, pod, workload, workload_type, %(clusterGroupLabelsStr)s) (
                   kube_pod_status_phase{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s, phase=~"Pending|Unknown|Failed"}
-                ) * on(namespace, pod, %(clusterGroupLabelsStr)s) group_left(owner_kind) topk by(namespace, pod, %(clusterGroupLabelsStr)s) (
-                  1, max by(namespace, pod, owner_kind, %(clusterGroupLabelsStr)s) (kube_pod_owner{owner_kind!="Job"})
+                ) * on(namespace, pod, %(clusterGroupLabelsStr)s) group_left(workload, workload_type) topk by(namespace, pod, %(clusterGroupLabelsStr)s) (
+                  1, max by(namespace, pod, workload, workload_type, %(clusterGroupLabelsStr)s) (namespace_workload_pod:kube_pod_owner:relabel{workload_type!="job"})
                 )
               ) > 0
               ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
@@ -73,17 +75,24 @@
           },
           {
             expr: |||
-              (
-              (
-                kube_deployment_spec_replicas{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                  >
-                kube_deployment_status_replicas_available{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-              ) and (
-                changes(kube_deployment_status_replicas_updated{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[10m])
-                  ==
-                0
-              )
-              ) * on(%(deploymentJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(deploymentLabelJoin)s
+              sum(
+                (
+                  kube_deployment_spec_replicas{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                    >
+                  kube_deployment_status_replicas_available{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                ) and (
+                  changes(kube_deployment_status_replicas_updated{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[10m])
+                    ==
+                  0
+                )
+              ) without (container,endpoint,instance,prometheus,pod,job,service)
+              * on(%(deploymentJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(deploymentLabelJoin)s
+              * on (%(deploymentJoinLabelsStr)s) group_left(workload,workload_type)
+                label_replace(
+                  clamp_max(
+                    count(namespace_workload_pod:kube_pod_owner:relabel{workload_type="deployment"}) by (%(deploymentJoinLabelsStr)s,workload,workload_type)
+                  ,1
+                ),"deployment", "$1", "workload", "(.+)")
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -219,6 +228,7 @@
               (
               sum by (namespace, pod, container, %(clusterGroupLabelsStr)s) (kube_pod_container_status_waiting_reason{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}) > 0
               ) * on(%(podJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(podLabelJoin)s
+              * on(namespace, pod, %(clusterGroupLabelsStr)s) group_left(workload, workload_type) namespace_workload_pod:kube_pod_owner:relabel
             ||| % $._config,
             labels: {
               severity: 'warning',

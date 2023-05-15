@@ -103,10 +103,10 @@
     podLabelJoin: labelJoin('kube_pod_labels', self.podLabels),
     deploymentLabelJoin: labelJoin('kube_deployment_labels', self.podLabels),
 
-    podJoinLabels: self.clusterGroupLabels +  ['namespace', 'pod'],
+    podJoinLabels: self.clusterGroupLabels + ['namespace', 'pod'],
     podJoinLabelsStr: std.join(',', self.podJoinLabels),
 
-    deploymentJoinLabels: self.clusterGroupLabels +  ['namespace', 'deployment'],
+    deploymentJoinLabels: self.clusterGroupLabels + ['namespace', 'deployment'],
     deploymentJoinLabelsStr: std.join(',', self.deploymentJoinLabels),
 
     namespaceLabel: 'namespace',
