@@ -121,15 +121,23 @@
           },
           {
             expr: |||
-              (
-                kube_statefulset_status_replicas_ready{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                  !=
-                kube_statefulset_status_replicas{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-              ) and (
-                changes(kube_statefulset_status_replicas_updated{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[10m])
-                  ==
-                0
-              )
+              sum(
+                (
+                  kube_statefulset_status_replicas_ready{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                    !=
+                  kube_statefulset_status_replicas{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                ) and (
+                  changes(kube_statefulset_status_replicas_updated{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[10m])
+                    ==
+                  0
+                )
+              ) without (container,endpoint,instance,prometheus,pod,job,service)
+              * on (%(clusterGroupLabelsStr)s,namespace,statefulset) group_left(workload,workload_type)
+                label_replace(
+                  clamp_max(
+                    count(namespace_workload_pod:kube_pod_owner:relabel{workload_type="statefulset"}) by (%(clusterGroupLabelsStr)s,namespace,statefulset,workload,workload_type)
+                  ,1
+                ),"statefulset", "$1", "workload", "(.+)")
             ||| % $._config,
             labels: {
               severity: 'warning',
@@ -190,29 +198,37 @@
           {
             alert: 'KubeDaemonSetRolloutStuck',
             expr: |||
-              (
-                (
-                  kube_daemonset_status_current_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                   !=
-                  kube_daemonset_status_desired_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                ) or (
-                  kube_daemonset_status_number_misscheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                   !=
-                  0
-                ) or (
-                  kube_daemonset_status_updated_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                   !=
-                  kube_daemonset_status_desired_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                ) or (
-                  kube_daemonset_status_number_available{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                   !=
-                  kube_daemonset_status_desired_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-                )
-              ) and (
-                changes(kube_daemonset_status_updated_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[5m])
-                  ==
-                0
-              )
+              sum(
+                  (
+                    (
+                      kube_daemonset_status_current_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                      !=
+                      kube_daemonset_status_desired_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                    ) or (
+                      kube_daemonset_status_number_misscheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                      !=
+                      0
+                    ) or (
+                      kube_daemonset_status_updated_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                      !=
+                      kube_daemonset_status_desired_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                    ) or (
+                      kube_daemonset_status_number_available{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                      !=
+                      kube_daemonset_status_desired_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
+                    )
+                  ) and (
+                    changes(kube_daemonset_status_updated_number_scheduled{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}[5m])
+                      ==
+                    0
+                  )
+              )  without (container,endpoint,instance,prometheus,pod,job,service)
+              * on (%(clusterGroupLabelsStr)s,namespace,daemonset) group_left(workload,workload_type)
+                label_replace(
+                  clamp_max(
+                    count(namespace_workload_pod:kube_pod_owner:relabel{workload_type="daemonset"}) by (%(clusterGroupLabelsStr)s,statefulset,workload,workload_type)
+                  ,1
+                ),"daemonset", "$1", "workload", "(.+)")
             ||| % $._config,
             labels: {
               severity: 'warning',
