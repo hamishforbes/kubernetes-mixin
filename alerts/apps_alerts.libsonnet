@@ -39,6 +39,7 @@
               sum by (namespace, pod, workload, workload_type, %(clusterGroupLabelsStr)s) (
                 max by(namespace, pod, workload, workload_type, %(clusterGroupLabelsStr)s) (
                   kube_pod_status_phase{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s, phase=~"Pending|Unknown|Failed"}
+                  unless on (%(clusterGroupLabelsStr)s,namespace,pod) (kube_pod_status_reason{reason="Evicted"}==1)
                 ) * on(namespace, pod, %(clusterGroupLabelsStr)s) group_left(workload, workload_type) topk by(namespace, pod, %(clusterGroupLabelsStr)s) (
                   1, max by(namespace, pod, workload, workload_type, %(clusterGroupLabelsStr)s) (namespace_workload_pod:kube_pod_owner:relabel{workload_type!="job"})
                 )
