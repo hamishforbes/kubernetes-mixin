@@ -94,7 +94,7 @@ local utils = import '../lib/utils.libsonnet';
             expr: |||
               (1 - max by(name, namespace, %(clusterGroupLabelsStr)s)(avg_over_time(aggregator_unavailable_apiservice{%(kubeApiserverSelector)s}[10m]))) * 100 < 85
             ||| % $._config,
-            'for': '5m',
+            'for': '25m',
             labels: {
               severity: 'warning',
             },

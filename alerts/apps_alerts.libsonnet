@@ -107,8 +107,14 @@
           },
           {
             expr: |||
-              kube_deployment_status_condition{condition="Progressing", status="false",%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s}
-              != 0
+               (kube_deployment_status_condition{condition="Progressing", status="false",%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s} != 0)
+                 * on(%(deploymentJoinLabelsStr)s) group_left(%(podLabelsStr)s) %(deploymentLabelJoin)s
+                 * on (%(deploymentJoinLabelsStr)s) group_left(workload,workload_type)
+                   label_replace(
+                     clamp_max(
+                       count(namespace_workload_pod:kube_pod_owner:relabel{workload_type="deployment"}) by (%(deploymentJoinLabelsStr)s,workload,workload_type),
+                       1
+                   ),"deployment", "$1", "workload", "(.+)")
             ||| % $._config,
             labels: {
               severity: 'warning',
