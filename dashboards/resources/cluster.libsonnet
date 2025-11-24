@@ -79,7 +79,7 @@ local var = g.dashboard.variable;
       local panels = [
         statPanel(
           'CPU Utilisation',
-          'none',
+          'percentunit',
           'cluster:node_cpu:ratio_rate5m{%(clusterLabel)s="$cluster"}' % $._config
         )
         + stat.gridPos.withW(4)
@@ -129,7 +129,7 @@ local var = g.dashboard.variable;
         + tsPanel.queryOptions.withTargets([
           prometheus.new(
             '${datasource}',
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config
+            'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{%(clusterLabel)s="$cluster"})) by (namespace)' % $._config
           )
           + prometheus.withLegendFormat('__auto'),
         ]),
@@ -144,7 +144,7 @@ local var = g.dashboard.variable;
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
-          prometheus.new('${datasource}', 'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
+          prometheus.new('${datasource}', 'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{%(clusterLabel)s="$cluster"})) by (namespace)' % $._config)
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
@@ -152,7 +152,7 @@ local var = g.dashboard.variable;
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
-          prometheus.new('${datasource}', 'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{%(clusterLabel)s="$cluster"}) by (namespace) / sum(namespace_cpu:kube_pod_container_resource_requests:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
+          prometheus.new('${datasource}', 'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{%(clusterLabel)s="$cluster"})) by (namespace) / sum(namespace_cpu:kube_pod_container_resource_requests:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
@@ -160,7 +160,7 @@ local var = g.dashboard.variable;
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
-          prometheus.new('${datasource}', 'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{%(clusterLabel)s="$cluster"}) by (namespace) / sum(namespace_cpu:kube_pod_container_resource_limits:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
+          prometheus.new('${datasource}', 'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m{%(clusterLabel)s="$cluster"})) by (namespace) / sum(namespace_cpu:kube_pod_container_resource_limits:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
         ])
@@ -246,7 +246,7 @@ local var = g.dashboard.variable;
         + tsPanel.queryOptions.withTargets([
           prometheus.new(
             '${datasource}',
-            'sum(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""}) by (namespace)' % $._config
+            'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""})) by (namespace)' % $._config
           )
           + prometheus.withLegendFormat('__auto'),
         ]),
@@ -261,7 +261,7 @@ local var = g.dashboard.variable;
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
-          prometheus.new('${datasource}', 'sum(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""}) by (namespace)' % $._config)
+          prometheus.new('${datasource}', 'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""})) by (namespace)' % $._config)
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
@@ -269,7 +269,7 @@ local var = g.dashboard.variable;
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
-          prometheus.new('${datasource}', 'sum(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""}) by (namespace) / sum(namespace_memory:kube_pod_container_resource_requests:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
+          prometheus.new('${datasource}', 'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""})) by (namespace) / sum(namespace_memory:kube_pod_container_resource_requests:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
@@ -277,7 +277,7 @@ local var = g.dashboard.variable;
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
 
-          prometheus.new('${datasource}', 'sum(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""}) by (namespace) / sum(namespace_memory:kube_pod_container_resource_limits:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
+          prometheus.new('${datasource}', 'sum(max by (%(clusterLabel)s, %(namespaceLabel)s, pod, container)(container_memory_rss{%(cadvisorSelector)s, %(clusterLabel)s="$cluster", container!=""})) by (namespace) / sum(namespace_memory:kube_pod_container_resource_limits:sum{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config)
           + prometheus.withInstant(true)
           + prometheus.withFormat('table'),
         ])
@@ -475,7 +475,7 @@ local var = g.dashboard.variable;
             properties: [
               {
                 id: 'unit',
-                value: 'Bps',
+                value: $._config.units.network,
               },
             ],
           },
@@ -506,7 +506,7 @@ local var = g.dashboard.variable;
         ]),
 
         tsPanel.new('Receive Bandwidth')
-        + tsPanel.standardOptions.withUnit('Bps')
+        + tsPanel.standardOptions.withUnit($._config.units.network)
         + tsPanel.queryOptions.withTargets([
           prometheus.new(
             '${datasource}',
@@ -516,7 +516,7 @@ local var = g.dashboard.variable;
         ]),
 
         tsPanel.new('Transmit Bandwidth')
-        + tsPanel.standardOptions.withUnit('Bps')
+        + tsPanel.standardOptions.withUnit($._config.units.network)
         + tsPanel.queryOptions.withTargets([
           prometheus.new(
             '${datasource}',
@@ -526,7 +526,7 @@ local var = g.dashboard.variable;
         ]),
 
         tsPanel.new('Average Container Bandwidth by Namespace: Received')
-        + tsPanel.standardOptions.withUnit('Bps')
+        + tsPanel.standardOptions.withUnit($._config.units.network)
         + tsPanel.queryOptions.withTargets([
           prometheus.new(
             '${datasource}',
@@ -536,7 +536,7 @@ local var = g.dashboard.variable;
         ]),
 
         tsPanel.new('Average Container Bandwidth by Namespace: Transmitted')
-        + tsPanel.standardOptions.withUnit('Bps')
+        + tsPanel.standardOptions.withUnit($._config.units.network)
         + tsPanel.queryOptions.withTargets([
           prometheus.new(
             '${datasource}',
@@ -698,7 +698,7 @@ local var = g.dashboard.variable;
             properties: [
               {
                 id: 'unit',
-                value: 'Bps',
+                value: $._config.units.network,
               },
             ],
           },

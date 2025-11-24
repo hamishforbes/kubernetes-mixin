@@ -32,6 +32,16 @@
     windowsExporterSelector: 'job="kubernetes-windows-exporter"',
     containerfsSelector: 'container!=""',
 
+    // List of labels to join for different type of metrics
+    // Only works if your environment has the labels kube_%s_labels (e.g. kube_pod_labels) available.
+    common_join_labels: [],
+    pods_join_labels: $._config.common_join_labels,
+    statefulsets_join_labels: $._config.common_join_labels,
+    deployments_join_labels: $._config.common_join_labels,
+    daemonsets_join_labels: $._config.common_join_labels,
+    horizontalpodautoscalers_join_labels: $._config.common_join_labels,
+    jobs_join_labels: $._config.common_join_labels,
+
     // Grafana dashboard IDs are necessary for stable links for dashboards
     grafanaDashboardIDs: {
       'apiserver.json': std.md5('apiserver.json'),
@@ -78,6 +88,12 @@
 
       // Timezone for Grafana dashboards:: UTC, browser, ...
       grafanaTimezone: 'UTC',
+    },
+
+    // Units for panels
+    units: {
+      // Use 'bps' for bits per second (SI), or 'binBps' for bytes per second (IEC).
+      network: 'bps',
     },
 
     // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
@@ -128,11 +144,14 @@
     // Certain workloads (e.g. KubeVirt/CDI) will fully utilise the persistent volume they claim
     // the size of the PV will never grow since they consume the entirety of the volume by design.
     // This selector allows an admin to 'pre-mark' the PVC of such a workload (or for any other use case)
-    // so that specific storage alerts will not fire.With the default selector, adding a label `exclude-from-alerts: 'true'`
+    // so that specific storage alerts will not fire.With the default selector, adding a label `excluded-from-alerts: 'true'`
     // to the PVC will have the desired effect.
     pvExcludedSelector: 'label_excluded_from_alerts="true"',
 
     // Default timeout value for k8s Jobs. The jobs which are active beyond this duration would trigger KubeJobNotCompleted alert.
     kubeJobTimeoutDuration: 12 * 60 * 60,
+
+    // Controls workload_type label value format: false = lowercase, true = PascalCase
+    usePascalCaseForWorkloadTypeLabelValues: false,
   },
 }
