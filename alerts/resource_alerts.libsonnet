@@ -116,18 +116,6 @@ local utils = import '../lib/utils.libsonnet';
           },
           {
             alert: 'KubeMemoryOvercommit',
-            expr: |||
-              sum(namespace_memory:kube_pod_container_resource_requests:sum{%(ignoringOverprovisionedWorkloadSelector)s}) by (%(clusterGroupLabelsStr)s)
-              - (
-                sum(kube_node_status_allocatable{resource="memory"}) by (%(clusterGroupLabelsStr)s)
-                - max(kube_node_status_allocatable{resource="memory"}) by (%(clusterGroupLabelsStr)s)
-              ) > 0
-              and
-              (
-                sum(kube_node_status_allocatable{resource="memory"}) by (%(clusterGroupLabelsStr)s)
-                 - max(kube_node_status_allocatable{resource="memory"}) by (%(clusterGroupLabelsStr)s)
-              ) > 0
-            ||| % $._config,
             labels: {
               severity: 'warning',
             },
@@ -142,12 +130,6 @@ local utils = import '../lib/utils.libsonnet';
           },
           {
             alert: 'KubeCPUQuotaOvercommit',
-            expr: |||
-              sum(min without(resource) (kube_resourcequota{%(prefixedNamespaceSelector)s%(kubeStateMetricsSelector)s, type="hard", resource=~"(cpu|requests.cpu)"})) by (%(clusterGroupLabelsStr)s)
-                /
-              sum(kube_node_status_allocatable{resource="cpu", %(kubeStateMetricsSelector)s}) by (%(clusterGroupLabelsStr)s)
-                > %(namespaceOvercommitFactor)s
-            ||| % $._config,
             labels: {
               severity: 'warning',
             },

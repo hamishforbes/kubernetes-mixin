@@ -13,9 +13,9 @@
             expr: |||
               histogram_quantile(
                 %(quantile)s,
-                sum(rate(kubelet_pleg_relist_duration_seconds_bucket{%(kubeletSelector)s}[5m])) by (%(clusterLabel)s, instance, le)
-                * on(%(clusterLabel)s, instance) group_left (node)
-                max by (%(clusterLabel)s, instance, node) (kubelet_node_name{%(kubeletSelector)s})
+                sum(rate(kubelet_pleg_relist_duration_seconds_bucket{%(kubeletSelector)s}[5m])) by (%(clusterGroupLabelsStr)s, instance, le)
+                * on(%(clusterGroupLabelsStr)s, instance) group_left (node)
+                max by (%(clusterGroupLabelsStr)s, instance, node) (kubelet_node_name{%(kubeletSelector)s})
               )
             ||| % ({ quantile: quantile } + $._config),
             labels: {
