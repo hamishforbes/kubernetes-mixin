@@ -1,3 +1,18 @@
+// Copyright kubernetes-mixin Authors
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 {
   _config+:: {
     SLOs: {
@@ -51,6 +66,7 @@
       'k8s-resources-multicluster.json': std.md5('k8s-resources-multicluster.json'),
       'k8s-resources-namespace.json': std.md5('k8s-resources-namespace.json'),
       'k8s-resources-node.json': std.md5('k8s-resources-node.json'),
+      'k8s-resources-nodes-overview.json': std.md5('k8s-resources-nodes-overview.json'),
       'k8s-resources-pod.json': std.md5('k8s-resources-pod.json'),
       'k8s-resources-windows-cluster.json': std.md5('k8s-resources-windows-cluster.json'),
       'k8s-resources-windows-namespace.json': std.md5('k8s-resources-windows-namespace.json'),
@@ -94,6 +110,12 @@
     units: {
       // Use 'bps' for bits per second (SI), or 'binBps' for bytes per second (IEC).
       network: 'bps',
+
+      // Use a multiplier of 8 when using a "bits" unit (e.g. 'bps'), or 1 when using a "bytes" unit (e.g. 'binBps').
+      networkMultiplier: 8,
+
+      // Returns "Bytes" if networkMultiplier is 1, or "Bits" if networkMultiplier is 8
+      networkUnitLabel: if self.networkMultiplier == 1 then 'Bytes' else 'Bits',
     },
 
     // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
@@ -150,6 +172,11 @@
 
     // Default timeout value for k8s Jobs. The jobs which are active beyond this duration would trigger KubeJobNotCompleted alert.
     kubeJobTimeoutDuration: 12 * 60 * 60,
+
+    // This selector allows an admin to 'pre-mark' a Job (e.g. a long-running batch/Spark job)
+    // so that the KubeJobNotCompleted alert will not fire for it. With the default selector,
+    // adding a label `excluded-from-alerts: 'true'` to the Job will have the desired effect.
+    kubeJobExcludedSelector: 'label_excluded_from_alerts="true"',
 
     // Controls workload_type label value format: false = lowercase, true = PascalCase
     usePascalCaseForWorkloadTypeLabelValues: false,

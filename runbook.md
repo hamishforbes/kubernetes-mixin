@@ -1,3 +1,18 @@
+<!-- Copyright kubernetes-mixin Authors
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. -->
+
 # Kubernetes Alert Runbooks
 
 As Rob Ewaschuk [puts it](https://docs.google.com/document/d/199PqyG3UsyXlwieHaqbGiWVa8eMWi8zzAn0YfcApr8Q/edit#):
@@ -8,7 +23,7 @@ It is a recommended practice that you add an annotation of "runbook" to every pr
 
 Matthew Skelton & Rob Thatcher have an excellent [run book template](https://github.com/SkeltonThatcher/run-book-template). This template will help teams to fully consider most aspects of reliably operating most interesting software systems, if only to confirm that "this section definitely does not apply here" - a valuable realization.
 
-This page collects this repositories alerts and begins the process of describing what they mean and how it might be addressed. Links from alerts to this page are added [automatically](https://github.com/kubernetes-monitoring/kubernetes-mixin/blob/master/lib/add-runbook-links.libsonnet).
+This page collects this repositories alerts and begins the process of describing what they mean and how it might be addressed. Links from alerts to this page are added [automatically](https://github.com/kubernetes-sigs/kubernetes-mixin/blob/master/lib/add-runbook-links.libsonnet).
 
 ### Group Name: "kubernetes-absent"
 
@@ -17,25 +32,45 @@ This page collects this repositories alerts and begins the process of describing
 + *Severity*: critical
 + *Runbook*: [Link](https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeapidown/)
 
+##### Alert Name: "KubeAPIInstanceUnreachable"
++ *Message*: `A KubeAPI instance has been unreachable for more than 15 minutes.`
++ *Severity*: warning
+
 ##### Alert Name: "KubeControllerManagerDown"
 + *Message*: `KubeControllerManager has disappeared from Prometheus target discovery.`
 + *Severity*: critical
 + *Runbook*: [Link](https://coreos.com/tectonic/docs/latest/troubleshooting/controller-recovery.html#recovering-a-controller-manager)
+
+##### Alert Name: "KubeControllerManagerInstanceUnreachable"
++ *Message*: `A KubeControllerManager instance has been unreachable for more than 15 minutes.`
++ *Severity*: warning
 
 ##### Alert Name: KubeSchedulerDown
 + *Message*: `KubeScheduler has disappeared from Prometheus target discovery`
 + *Severity*: critical
 + *Runbook*: [Link](https://coreos.com/tectonic/docs/latest/troubleshooting/controller-recovery.html#recovering-a-scheduler)
 
+##### Alert Name: "KubeSchedulerInstanceUnreachable"
++ *Message*: `A KubeScheduler instance has been unreachable for more than 15 minutes.`
++ *Severity*: warning
+
 ##### Alert Name: KubeletDown
 + *Message*: `Kubelet has disappeared from Prometheus target discovery.`
 + *Severity*: critical
 + *Runbook*: [Link](https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeletdown/)
 
+##### Alert Name: "KubeletInstanceUnreachable"
++ *Message*: `A Kubelet instance has been unreachable for more than 15 minutes.`
++ *Severity*: warning
+
 ##### Alert Name: KubeProxyDown
 + *Message*: `KubeProxy has disappeared from Prometheus target discovery`
 + *Severity*: critical
 + *Runbook*: [Link](https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubeproxydown/)
+
+##### Alert Name: "KubeProxyInstanceUnreachable"
++ *Message*: `A KubeProxy instance has been unreachable for more than 15 minutes.`
++ *Severity*: warning
 
 ### Group Name: kubernetes-apps
 
@@ -215,7 +250,7 @@ This page collects this repositories alerts and begins the process of describing
 ##### Alert Name: "KubeNodeEviction"
 + *Message*: `Node {{ $labels.node }} is evicting Pods due to {{ $labels.eviction_signal }}. Eviction occurs when eviction thresholds are crossed, typically caused by Pods exceeding RAM/ephemeral-storage limits.`
 + *Severity*: info
-+ *Runbook*: [Link](https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodeeviction)
++ *Runbook*: [Link](https://github.com/kubernetes-sigs/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodeeviction)
 
 ##### Alert Name: "KubeletPlegDurationHigh"
 + *Message*: `The Kubelet Pod Lifecycle Event Generator has a 99th percentile duration of {{ $value }} seconds on node {{ $labels.node }}.`

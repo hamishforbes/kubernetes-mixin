@@ -1,3 +1,18 @@
+// Copyright kubernetes-mixin Authors
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 local utils = import '../lib/utils.libsonnet';
 
 {
@@ -25,7 +40,7 @@ local utils = import '../lib/utils.libsonnet';
           {
             expr: |||
               kube_node_status_condition{%(kubeStateMetricsSelector)s,condition="Ready",status="true"} == 0
-              and on (%(clusterLabel)s, node)
+              and on (%(clusterGroupLabelsStr)s, node)
               kube_node_spec_unschedulable{%(kubeStateMetricsSelector)s} == 0
             ||| % $._config,
             labels: {
@@ -44,7 +59,7 @@ local utils = import '../lib/utils.libsonnet';
             alert: 'KubeNodePressure',
             expr: |||
               kube_node_status_condition{%(kubeStateMetricsSelector)s,condition=~"(MemoryPressure|DiskPressure|PIDPressure)",status="true"} == 1
-              and on (%(clusterLabel)s, node)
+              and on (%(clusterGroupLabelsStr)s, node)
               kube_node_spec_unschedulable{%(kubeStateMetricsSelector)s} == 0
             ||| % $._config,
             labels: {
@@ -86,7 +101,7 @@ local utils = import '../lib/utils.libsonnet';
                   kubelet_running_pods{%(kubeletSelector)s} > 1
                 )
                 * on (%(clusterGroupLabelsStr)s, instance) group_left(node)
-                max by (%(clusterLabel)s, instance, node) (
+                max by (%(clusterGroupLabelsStr)s, instance, node) (
                   kubelet_node_name{%(kubeletSelector)s}
                 )
               )
@@ -127,9 +142,9 @@ local utils = import '../lib/utils.libsonnet';
           {
             alert: 'KubeNodeEviction',
             expr: |||
-              sum(rate(kubelet_evictions{%(kubeletSelector)s}[15m])) by(%(clusterLabel)s, eviction_signal, instance)
-              * on (%(clusterLabel)s, instance) group_left(node)
-              max by (%(clusterLabel)s, instance, node) (
+              sum(rate(kubelet_evictions{%(kubeletSelector)s}[15m])) by(%(clusterGroupLabelsStr)s, eviction_signal, instance)
+              * on (%(clusterGroupLabelsStr)s, instance) group_left(node)
+              max by (%(clusterGroupLabelsStr)s, instance, node) (
                 kubelet_node_name{%(kubeletSelector)s}
               )
               > %(KubeNodeEvictionRateThreshold)s
@@ -280,9 +295,30 @@ local utils = import '../lib/utils.libsonnet';
               summary: 'Kubelet has failed to renew its server certificate.',
             },
           },
-          (import '../lib/absent_alert.libsonnet') {
+          (import '../lib/instance_unreachable_alert.libsonnet') {
             componentName:: 'Kubelet',
             selector:: $._config.kubeletSelector,
+          },
+          {
+            // Use kube-state-metrics as an anchor to detect kubelet down while
+            // preserving the cluster label. This fires when kube-state-metrics
+            // reports nodes exist but no kubelet targets are up for that cluster.
+            alert: 'KubeletDown',
+            expr: |||
+              count by (%(clusterGroupLabelsStr)s) (kube_node_info{%(kubeStateMetricsSelector)s})
+              unless on (%(clusterGroupLabelsStr)s)
+              count by (%(clusterGroupLabelsStr)s) (up{%(kubeletSelector)s} == 1)
+            ||| % $._config,
+            'for': '15m',
+            labels: {
+              severity: 'critical',
+            },
+            annotations: {
+              description: 'Kubelet has disappeared from Prometheus target discovery%s.' % [
+                utils.ifShowMultiCluster($._config, ' on cluster {{ $labels.%(clusterLabel)s }}' % $._config),
+              ],
+              summary: 'Target disappeared from Prometheus target discovery.',
+            },
           },
         ],
       },
